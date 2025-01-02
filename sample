@@ -1,0 +1,82 @@
+import streamlit as st
+import time
+from transformers import pipeline
+
+# Initialize translation history in session state if not already present
+if "translation_history" not in st.session_state:
+    st.session_state.translation_history = []
+
+st.title("Enhanced Multilingual Translator Chatbot")
+
+# Choose the translation models from Hugging Face
+translation_models = {
+    "English to German": "Helsinki-NLP/opus-mt-en-de",
+    "German to English": "Helsinki-NLP/opus-mt-de-en",
+    "English to French": "Helsinki-NLP/opus-mt-en-fr",
+    "French to English": "Helsinki-NLP/opus-mt-fr-en",
+    "English to Urdu": "Helsinki-NLP/opus-mt-en-ur",
+    "Urdu to English": "Helsinki-NLP/opus-mt-ur-en",
+    "English to Spanish": "Helsinki-NLP/opus-mt-en-es",
+    "Spanish to English": "Helsinki-NLP/opus-mt-es-en",
+    "English to Chinese": "Helsinki-NLP/opus-mt-en-zh",
+    "Chinese to English": "Helsinki-NLP/opus-mt-zh-en",
+    # Add more language pairs as needed
+}
+
+selected_translation = st.selectbox("Select translation model", list(translation_models.keys()))
+
+
+translator = pipeline(task="translation", model=translation_models[selected_translation])
+
+# User input for translation
+user_input = st.text_area("Enter text for translation:", "")
+
+# Display loading indicator
+if st.button("Translate"):
+    with st.spinner("Translating..."):
+        # Simulate translation delay for demonstration
+        time.sleep(2)
+        if user_input:
+            # Perform translation
+            translated_text = translator(user_input, max_length=500)[0]['translation_text']
+
+            # Add the translation to history
+            st.session_state.translation_history.append({
+                "Input": user_input,
+                "Output": translated_text,
+                "Configuration": selected_translation
+            })
+
+            # Display the result
+            st.success(f"Translated Text: {translated_text}")
+        else:
+            st.warning("Please enter text for translation.")
+
+# Clear button to reset input and result
+if st.button("Clear"):
+    user_input = ""
+    st.success("Input cleared.")
+    st.empty()  # Clear previous results if any
+
+# Display translation history in the sidebar
+with st.sidebar:
+    st.header("Translation History")
+    if st.session_state.translation_history:
+        for i, entry in enumerate(st.session_state.translation_history[::-1]):  # Reverse to show latest first
+            st.write(f"*Translation {len(st.session_state.translation_history) - i}:*")
+            st.write(f"*Configuration:* {entry['Configuration']}")
+            st.write(f"*Input:* {entry['Input']}")
+            st.write(f"*Output:* {entry['Output']}")
+            st.markdown("---")
+    else:
+        st.write("No translations yet.")
+
+# About section
+st.markdown("---")
+st.subheader("About")
+st.write(
+    "This is an enhanced Multilingual Translator chatbot that uses the Hugging Face Transformers library."
+)
+st.write(
+    "Select a translation model from the dropdown, enter text, and click 'Translate' to see the translation."
+)
